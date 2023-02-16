@@ -3,28 +3,32 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-# Mam nadzieję że ta ilość komentarzy wystarczy gdyż i pan i ja dokładnie wiemy
-# co użyte przeze mnie funkcje robią a pisanie zbędnych komentarzy które mówią że
-# białe jest białe a czarne jest czarne jest niepotrzebne
+# Projekt ma na celu przewidywanie przybliżonej liczby pasażerów na jednej ze stacji metra
+# na podstawie panujących bądź przewidywanych warunków pogodowych
+# dzięki takiemu przybliżaniu ilości pasażerów można definiować czy metro ma jeździć częściej
+# czy rzadziej a taka optymalizacja pracy metra może spowodować większe zadowolenie społeczne oraz
+# minimalizację śladu węglowego dzięki wysyłaniu takiej ilości pociągów
+# metra jaka jest rzeczywiście potrzebna
+
 
 # Wczytywanie danych
-df = pd.read_csv("Metro_Interstate_Traffic_Volume.csv")
+dane = pd.read_csv("Metro_Interstate_Traffic_Volume.csv")
 #Wypisanie informacji które pan chciał ale przed obróbką
 print("Przed Obróbką Danych")
-print(f"Liczba Rzędów: {len(df.axes[0])}")
-print(f"Liczba Kolumn: {len(df.axes[1])}")
-print(f"Typy Danych:\n{df.dtypes}")
+print(f"Liczba Rzędów: {len(dane.axes[0])}")
+print(f"Liczba Kolumn: {len(dane.axes[1])}")
+print(f"Typy Danych:\n{dane.dtypes}")
 
-"""
-Przygotowanie danych
-Np. Przypisanie do wartości pisemnych odpowiedników liczbowych czy konwersja daty na datetime
-"""
+
+#Przygotowanie danych
+#Np. Przypisanie do wartości pisemnych odpowiedników liczbowych czy konwersja daty na datetime
+
 #Zanim zamienie typy pogody na odpowiedniki liczbowe zrobię wykres kołołowy pokazujący %-owe występowanie typów pogody
-counted_weather = []
-labels = df.weather_main.unique()
+weather_count = []
+labels = dane.weather_main.unique()
 for i in labels:
-    counted_weather.append(df.weather_main.value_counts()[i])
-plt.pie(counted_weather, labels=labels, autopct='%1.1f%%')
+    weather_count.append(dane.weather_main.value_counts()[i])
+plt.pie(weather_count, labels=labels, autopct='%1.1f%%')
 plt.title('Wykres Kołowy % Typu Pogody')
 plt.show()
 #To jest słownik
@@ -43,7 +47,7 @@ funday = {'None':0,
 'Labor Day':10,
 'Martin Luther King Jr Day':11,}
 # W skrócie ten kod zamienia wartości z kolumny "holiday" na wartości odpowiadające im z słownika "funday"
-df.holiday = [funday[item] for item in df.holiday]
+dane.holiday = [funday[item] for item in dane.holiday]
 #----------------------------------------------------------------------
 #To jest słownik
 #      |
@@ -59,8 +63,8 @@ weather = {'Clouds':1 ,
            'Snow':9,
            'Squall':10,
            'Smoke':11}
-# W skrócie ten kod zamienia wartości z kolumny "holiday" na wartości odpowiadające im z słownika "weather".
-df.weather_main = [weather[item] for item in df.weather_main]
+# W skrócie ten kod zamienia wartości z kolumny "weather_main" na wartości odpowiadające im z słownika "weather".
+dane.weather_main = [weather[item] for item in dane.weather_main]
 #----------------------------------------------------------------------
 #To jest słownik
 #      |
@@ -104,75 +108,75 @@ weather_desc = {'scattered clouds':0,
 'light shower snow':36,
 'sleet':37,}\
 # W skrócie ten kod zamienia wartości z kolumny "weather_description" na wartości odpowiadające im z słownika "weather_desc".
-df.weather_description = [weather_desc[item] for item in df.weather_description]
+dane.weather_description = [weather_desc[item] for item in dane.weather_description]
 #----------------------------------------------------------------------
 # W skrócie używając funkcji pandas "to_datetime" do konwersji na typ danych datetime z których zapisuję miesiąc,dzień i godzinę a nastepnie usuwam kolumne "date_time"
-df['date_time'] = pd.to_datetime(df['date_time'])
-df['month'] = df['date_time'].dt.month
-df['day'] = df['date_time'].dt.day
-df['hour'] = df['date_time'].dt.hour
-df.drop("date_time", axis=1, inplace=True)
+dane['date_time'] = pd.to_datetime(dane['date_time'])
+dane['month'] = dane['date_time'].dt.month
+dane['day'] = dane['date_time'].dt.day
+dane['hour'] = dane['date_time'].dt.hour
+dane.drop("date_time", axis=1, inplace=True)
 #----------------------------------------------------------------------
 #Wypisanie informacji które pan chciał ale po obróbce
 print("-------------------------------------")
 print("Po Obróbce Danych")
-print(f"Liczba Rzędów: {len(df.axes[0])}")
-print(f"Liczba Kolumn: {len(df.axes[1])}")
-print(f"Typy Danych:\n{df.dtypes}")
+print(f"Liczba Rzędów: {len(dane.axes[0])}")
+print(f"Liczba Kolumn: {len(dane.axes[1])}")
+print(f"Typy Danych:\n{dane.dtypes}")
 print("-------------------------------------")
 #To jest lista z danymi typu string
 #      |
 #      v
 features = ["holiday","temp", "rain_1h", "snow_1h", "clouds_all", "weather_main", "weather_description", 'month','day','hour']
 #Definiuję dataframe z kolumnami które mają wykazać
-x = df[features]
+x = dane[features]
 #To jest string
 #      |
 #      v
 labels = "traffic_volume"
-y = df[labels]
+y = dane[labels]
 
 # Dziele dane na zbiór treningowy i testowy
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2,random_state=0)
 
 # Towrzę i trenuje model drzewa decyzyjnego
-regressor = DecisionTreeRegressor(splitter="best",random_state=0)
-regressor.fit(x_train.values, y_train.values)
+model = DecisionTreeRegressor(splitter="best", random_state=0)
+model.fit(x_train.values, y_train.values)
 
 # Ocenianie modelu na danych testowych
-score = regressor.score(x_test.values, y_test.values)
+score = model.score(x_test.values, y_test.values)
 print("Accuracy:", f'{int(score*100)}%')
 print("-------------------------------------")
 # Przykład działania te dane zostały wcześniej usunięte z pliku CSV
 print("Dane: 0,290.37,0.0,0.0,90,1,2,10,9,17\nIlość Pasażerów: 6127")
 print("-------------------------------------")
-print(f"Predykcja: {int(regressor.predict([[0,290.37,0.0,0.0,90,1,2,10,9,17]])[0])}")
+print(f"Predykcja: {int(model.predict([[0, 290.37, 0.0, 0.0, 90, 1, 2, 10, 9, 17]])[0])}")
 
 #Tworzę histogram średniej ilości pasażerów z podziałem na godziny
-mean_traffic_by_hour = df.groupby('hour').mean()['traffic_volume']
-mean_traffic_by_hour.plot(kind='bar', color='red',edgecolor='black')
+avg_trafic = dane.groupby('hour').mean()['traffic_volume']
+avg_trafic.plot(kind='bar', color='red', edgecolor='black')
 plt.title('Histogram średniej ilości pasażerów na godzinę')
 plt.xlabel('Godzina')
 plt.ylabel('Średnia ilości pasażerów')
 plt.show()
 #---------------------------------------------
 #Tworzę wykres liniowy średniej ilości pasażerów z podziałem na godziny
-hourly_avg = df.groupby("hour").mean()["traffic_volume"]
-hourly_avg.plot(kind="line")
+avg_hour = dane.groupby("hour").mean()["traffic_volume"]
+avg_hour.plot(kind="line")
+plt.title("Średnia ilość pasażerów w różnych godzinach dnia")
 plt.xlabel("Godzina")
 plt.ylabel("Średnia ilość ruchu")
-plt.title("Średni ruch w różnych godzinach dnia")
 plt.show()
 #---------------------------------------------
 #Tworzę wykres kołowy średniej ilości pasażerów z podziałem na dni miesiąca
-weekday_proportions = df["day"].value_counts() / len(df)
-weekday_proportions.plot(kind="pie")
+avg_month_day = dane["day"].value_counts() / len(dane)
+avg_month_day.plot(kind="pie", autopct='%1.1f%%')
 plt.title("Proporcje ruchu w różne dni miesiąca")
 plt.show()
 #---------------------------------------------
 #Tworzę wykres Violinowy ilości pasażerów
-sns.violinplot(df["traffic_volume"])
-plt.ylabel("Ilość Pasażerów")
+sns.violinplot(dane["traffic_volume"])
 plt.title("Ilość Pasażerów Wykres Violinowy")
+plt.ylabel("Ilość Pasażerów")
 plt.show()
 #---------------------------------------------
